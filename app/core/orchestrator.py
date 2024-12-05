@@ -1,5 +1,9 @@
 from typing import Dict, List, Optional
 from pydantic import BaseModel
+import uuid
+import asyncio
+import time
+from dataclasses import dataclass
 
 class BotService(BaseModel):
     name: str
@@ -7,18 +11,56 @@ class BotService(BaseModel):
     capabilities: List[str]
     is_active: bool = True
 
+@dataclass
+class ServiceCreate:
+    name: str
+    endpoint: str
+    capabilities: List[str]
+    description: str
+
+@dataclass
+class ServiceResponse:
+    id: str
+    name: str
+    endpoint: str
+    capabilities: List[str]
+    description: str
+    is_active: bool
+
 class ChatbotOrchestrator:
     def __init__(self):
         self.services: Dict[str, BotService] = {}
+        self._load_metrics: Dict[str, Dict] = {}
+        self._last_health_check: Dict[str, float] = {}
 
-    def register_service(self, service: BotService) -> None:
+    async def register_service(self, service: ServiceCreate) -> ServiceResponse:
         """Register a new bot service with the orchestrator."""
-        self.services[service.name] = service
+        if service.name in self.services:
+            raise ValueError(f"Service {service.name} already exists")
+        
+        service_id = str(uuid.uuid4())
+        service_response = ServiceResponse(
+            id=service_id,
+            name=service.name,
+            endpoint=service.endpoint,
+            capabilities=service.capabilities,
+            description=service.description,
+            is_active=True
+        )
+        
+        self.services[service.name] = service_response
+        self._load_metrics[service.name] = {
+            "requests": 0,
+            "success": 0,
+            "total_time": 0
+        }
+        return service_response
 
     def deregister_service(self, service_name: str) -> None:
         """Remove a bot service from the orchestrator."""
         if service_name in self.services:
             del self.services[service_name]
+            del self._load_metrics[service_name]
 
     def get_available_services(self) -> List[BotService]:
         """Get list of all active services."""
@@ -26,12 +68,15 @@ class ChatbotOrchestrator:
 
     async def route_query(self, query: str) -> Optional[BotService]:
         """Route a query to the most appropriate bot service."""
-        # TODO: Implement routing logic based on query analysis
-        # This could include:
-        # - NLP-based classification
-        # - Capability matching
-        # - Load balancing considerations
-        pass
+        available_services = self.get_available_services()
+        if not available_services:
+            return None
+
+        # Simple load balancing - choose service with least current load
+        return min(
+            available_services,
+            key=lambda s: self._load_metrics[s.name]["requests"]
+        )
 
     async def process_query(self, query: str) -> Dict:
         """Process a query through the appropriate bot service."""
@@ -39,8 +84,44 @@ class ChatbotOrchestrator:
         if not service:
             return {"error": "No suitable service found for query"}
         
-        # TODO: Implement actual service call
+        try:
+            self._load_metrics[service.name]["requests"] += 1
+            start_time = time.time()
+            
+            # Simulate processing (replace with actual service call)
+            await asyncio.sleep(0.1)
+            response = {
+                "service": service.name,
+                "response": f"Processed by {service.name}: {query}"
+            }
+            
+            # Update metrics
+            self._load_metrics[service.name]["success"] += 1
+            self._load_metrics[service.name]["total_time"] += time.time() - start_time
+            
+            return response
+        except Exception as e:
+            return {"error": f"Service error: {str(e)}"}
+        finally:
+            self._load_metrics[service.name]["requests"] -= 1
+
+    def get_service_metrics(self, service_name: str) -> Dict:
+        """Get performance metrics for a service."""
+        if service_name not in self._load_metrics:
+            raise KeyError(f"Service {service_name} not found")
+        
+        metrics = self._load_metrics[service_name]
+        total_requests = metrics["success"]
+        if total_requests > 0:
+            avg_time = metrics["total_time"] / total_requests
+            success_rate = (metrics["success"] / total_requests) * 100
+        else:
+            avg_time = 0
+            success_rate = 100
+            
         return {
-            "service": service.name,
-            "response": "Service response placeholder"
+            "current_load": metrics["requests"],
+            "total_requests": total_requests,
+            "success_rate": success_rate,
+            "average_response_time": avg_time
         }
