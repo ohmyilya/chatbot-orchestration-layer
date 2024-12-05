@@ -4,11 +4,11 @@ A powerful meta-layer for orchestrating multiple chatbots and services, enabling
 
 ## Features
 
-- 🔄 Intelligent query routing to appropriate bot services
-- 🎯 Unified interface for multi-bot interactions
-- ⚖️ Load balancing and failover mechanisms
-- 🔌 Easy integration of new bot services
-- 📊 Performance monitoring and analytics
+- Intelligent query routing to appropriate bot services
+- Unified interface for multi-bot interactions
+- Load balancing and failover mechanisms
+- Easy integration of new bot services
+- Performance monitoring and analytics
 
 ## Tech Stack
 
