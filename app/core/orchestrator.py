@@ -4,6 +4,7 @@ import uuid
 import asyncio
 import time
 from dataclasses import dataclass
+from app.core.config import settings
 
 class BotService(BaseModel):
     name: str
@@ -26,6 +27,10 @@ class ServiceResponse:
     capabilities: List[str]
     description: str
     is_active: bool
+
+class ModelAuthorizationError(Exception):
+    """Exception raised when a model is not authorized."""
+    pass
 
 class ChatbotOrchestrator:
     def __init__(self):
@@ -125,3 +130,17 @@ class ChatbotOrchestrator:
             "success_rate": success_rate,
             "average_response_time": avg_time
         }
+
+    def _check_model_authorization(self, model_name: str) -> None:
+        """
+        Check if the model is authorized for use.
+        
+        Args:
+            model_name (str): Name of the model to check
+        
+        Raises:
+            ModelAuthorizationError: If model is not authorized
+        """
+        if settings.MODEL_AUTHORIZATION_ENABLED:
+            if model_name not in settings.AUTHORIZED_MODELS:
+                raise ModelAuthorizationError(f"Model '{model_name}' is not authorized for use.")

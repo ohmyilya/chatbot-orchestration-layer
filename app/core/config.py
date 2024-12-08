@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     MAX_TOKENS: int = int(os.getenv("MAX_TOKENS", 2000))
     TEMPERATURE: float = float(os.getenv("TEMPERATURE", 0.7))
     
+    # Model Authorization
+    AUTHORIZED_MODELS: List[str] = os.getenv("AUTHORIZED_MODELS", "gpt-3.5-turbo,claude-2,llama2").split(",")
+    MODEL_AUTHORIZATION_ENABLED: bool = os.getenv("MODEL_AUTHORIZATION_ENABLED", "True").lower() == "true"
+    
     # Conversation Management
     MAX_CONVERSATION_HISTORY: int = int(os.getenv("MAX_CONVERSATION_HISTORY", 10))
     CONVERSATION_TIMEOUT_MINUTES: int = int(os.getenv("CONVERSATION_TIMEOUT_MINUTES", 30))

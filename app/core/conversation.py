@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 import json
 from app.core.config import settings
 import aioredis
+from app.core.orchestrator import ModelAuthorizationError
 
 class ConversationManager:
     def __init__(self, redis_url: str = settings.REDIS_URL):
@@ -112,3 +113,17 @@ class ConversationManager:
         except Exception as e:
             print(f"Error getting conversation metadata: {str(e)}")
             return None
+
+    async def validate_model_access(self, model_name: str) -> None:
+        """
+        Validate if the specified model is authorized for use.
+        
+        Args:
+            model_name (str): Name of the model to validate
+        
+        Raises:
+            ModelAuthorizationError: If model is not authorized
+        """
+        if settings.MODEL_AUTHORIZATION_ENABLED:
+            if model_name not in settings.AUTHORIZED_MODELS:
+                raise ModelAuthorizationError(f"Model '{model_name}' is not authorized for use.")
