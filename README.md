@@ -63,7 +63,7 @@ pip install -r requirements.txt
 4. Set up environment variables:
 ```bash
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your orchestration layer configuration
 ```
 
 5. Start the services using Docker Compose:
