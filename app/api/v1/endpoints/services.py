@@ -3,19 +3,38 @@ from typing import List, Dict, Any
 from app.core.orchestrator import ChatbotOrchestrator
 from app.models.service import ServiceCreate, ServiceUpdate, ServiceResponse
 from app.core.dependencies import get_orchestrator
+import logging
 
 router = APIRouter()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @router.post("/", response_model=ServiceResponse)
 async def register_service(
     service: ServiceCreate,
     orchestrator: ChatbotOrchestrator = Depends(get_orchestrator)
-):
-    """Register a new bot service with the orchestrator."""
+) -> ServiceResponse:
+    """
+    Register a new bot service with the orchestrator.
+
+    Args:
+        service (ServiceCreate): The service to be registered.
+        orchestrator (ChatbotOrchestrator): The orchestrator dependency.
+
+    Returns:
+        ServiceResponse: The response after registering the service.
+    """
     try:
+        logger.info("Registering new service: %s", service.name)
         return await orchestrator.register_service(service)
     except ValueError as e:
+        logger.error("Error registering service: %s", str(e))
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Unexpected error: %s", str(e))
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @router.get("/", response_model=List[ServiceResponse])
 async def list_services(
